@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Reservas · SUM Bauness</title>
+<style>
+  :root {
+    --green-dark:   #52b788;
+    --green-mid:    #74c69d;
+    --green-light:  #b7e4c7;
+    --green-pale:   #d8f3dc;
+    --green-faint:  #f0faf2;
+    --white:        #ffffff;
+    --text-dark:    #1b4332;
+    --text-mid:     #40916c;
+    --text-light:   #74c69d;
+    --border:       #b7e4c7;
+    --shadow:       rgba(82,183,136,0.15);
+    --red:          #e63946;
+    --red-light:    #fde8ea;
+    --radius:       12px;
+    --radius-sm:    8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--green-faint);
+    color: var(--text-dark);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ─────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%);
+    color: #fff;
+    padding: 28px 20px 24px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(45,106,79,0.25);
+  }
+  header h1 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 700; letter-spacing: -0.02em; }
+  header p  { margin-top: 4px; font-size: 0.88rem; opacity: 0.85; }
+
+  /* ── TABS ───────────────────────────────────── */
+  .tabs {
+    display: flex;
+    background: var(--white);
+    border-bottom: 2px solid var(--green-light);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    flex: 1; min-width: 110px; padding: 14px 8px;
+    text-align: center; font-size: 0.82rem; font-weight: 600;
+    color: var(--text-mid); cursor: pointer; border: none; background: none;
+    border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap;
+  }
+  .tab:hover { background: var(--green-faint); }
+  .tab.active { color: var(--text-dark); border-bottom-color: var(--green-dark); }
+
+  /* ── CONTENT ────────────────────────────────── */
+  .tab-content { display: none; padding: 20px 16px 40px; max-width: 680px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ── CARD ───────────────────────────────────── */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 0.78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text-mid); margin-bottom: 14px;
+  }
+
+  /* ── FORM ───────────────────────────────────── */
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-dark); margin-bottom: 5px; }
+  input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 0.93rem; color: var(--text-dark); background: var(--white);
+    transition: border-color .2s; appearance: none;
+  }
+  input:focus { outline: none; border-color: var(--green-dark); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fecha-row { display: grid; grid-template-columns: 2fr 2fr 3fr; gap: 8px; }
+
+  /* ── TURNOS ─────────────────────────────────── */
+  .turnos-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+  .turno-btn {
+    padding: 18px 12px; border: 2px solid var(--border);
+    border-radius: var(--radius); background: var(--white);
+    cursor: pointer; text-align: center; transition: all .18s;
+  }
+  .turno-btn:hover:not(.ocupado) { background: var(--green-pale); border-color: var(--green-mid); }
+  .turno-btn.selected { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
+  .turno-btn.selected .turno-sub { color: rgba(255,255,255,0.75); }
+  .turno-btn.ocupado { background: #f5f5f5; border-color: #e8e8e8; cursor: not-allowed; opacity: .6; }
+  .turno-icon  { font-size: 1.6rem; margin-bottom: 6px; }
+  .turno-label { font-size: 0.95rem; font-weight: 700; color: inherit; }
+  .turno-sub   { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+
+  /* ── BUTTONS ────────────────────────────────── */
+  .btn {
+    display: block; width: 100%; padding: 13px; border: none;
+    border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; text-align: center; transition: all .2s;
+  }
+  .btn-green { background: var(--green-dark); color: #fff; }
+  .btn-green:hover { background: #2d6a4f; }
+  .btn-green:disabled { background: var(--green-light); cursor: not-allowed; }
+  .btn-outline { background: var(--white); color: var(--text-dark); border: 1.5px solid var(--border); }
+  .btn-outline:hover { background: var(--green-faint); }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover { background: #c1121f; }
+  .btn-red:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-danger {
+    padding: 5px 12px; background: none; border: 1.5px solid var(--red);
+    color: var(--red); border-radius: var(--radius-sm); font-size: 0.78rem;
+    font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap;
+  }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+
+  /* ── ALERTS ─────────────────────────────────── */
+  .alert {
+    display: none; padding: 10px 14px; border-radius: var(--radius-sm);
+    font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;
+  }
+  .alert.show { display: block; }
+  .alert-error   { background: var(--red-light); color: var(--red); }
+  .alert-success { background: var(--green-pale); color: #2d6a4f; }
+
+  /* ── LOADING ────────────────────────────────── */
+  .loading { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.9rem; }
+  .spinner {
+    display: inline-block; width: 18px; height: 18px;
+    border: 2px solid var(--green-light); border-top-color: var(--green-dark);
+    border-radius: 50%; animation: spin .7s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CALENDARIO ─────────────────────────────── */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-nav-btn {
+    background: var(--green-pale); border: none; border-radius: var(--radius-sm);
+    padding: 7px 14px; font-size: 1rem; cursor: pointer;
+    color: var(--text-dark); font-weight: 700; transition: background .18s;
+  }
+  .cal-nav-btn:hover { background: var(--green-light); }
+  .cal-month-label { font-size: 1rem; font-weight: 700; color: var(--text-dark); text-transform: capitalize; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-light); padding: 4px 0; text-transform: uppercase; }
+  .cal-day {
+    min-height: 52px; border-radius: var(--radius-sm);
+    border: 1.5px solid transparent; padding: 4px;
+    cursor: default; background: var(--white); transition: all .15s; position: relative;
+  }
+  .cal-day.empty { background: transparent; border-color: transparent; }
+  .cal-day.has-reservas { background: var(--green-pale); border-color: var(--green-light); cursor: pointer; }
+  .cal-day.has-reservas:hover { background: var(--green-light); border-color: var(--green-mid); }
+  .cal-day.today { border-color: var(--green-dark) !important; }
+  .cal-day-num { font-size: 0.78rem; font-weight: 600; color: var(--text-dark); }
+  .cal-day.empty .cal-day-num { display: none; }
+  .cal-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+  .cal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-dark); flex-shrink: 0; }
+  .cal-count { font-size: 0.65rem; color: var(--text-mid); font-weight: 700; margin-top: 2px; }
+
+  /* detalle día */
+  .cal-detalle { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); margin-top: 14px; overflow: hidden; }
+  .cal-detalle-header {
+    background: var(--green-dark); color: #fff; padding: 12px 16px;
+    font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cal-detalle-close { background: none; border: none; color: #fff; font-size: 1.1rem; cursor: pointer; padding: 0 4px; }
+  .cal-detalle-body { padding: 12px 16px; }
+
+  /* ── RESERVA ITEM ───────────────────────────── */
+  .reserva-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border); gap: 12px;
+  }
+  .reserva-item:last-child { border-bottom: none; }
+  .reserva-info { flex: 1; min-width: 0; }
+  .reserva-depto { font-size: 0.78rem; font-weight: 700; color: var(--text-mid); text-transform: uppercase; letter-spacing: .05em; }
+  .reserva-nombre { font-size: 0.92rem; font-weight: 600; color: var(--text-dark); }
+  .reserva-meta { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+  .reserva-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .badge-manana { background: #fff8e1; color: #b45309; }
+  .badge-noche  { background: #ede9fe; color: #5b21b6; }
+
+  .empty-state { text-align: center; padding: 30px 16px; color: var(--text-light); }
+  .empty-state .icon { font-size: 2.2rem; margin-bottom: 10px; }
+
+  /* ── MIS RESERVAS ───────────────────────────── */
+  .search-row { display: flex; gap: 8px; align-items: flex-end; }
+  .search-row .field { flex: 1; margin: 0; }
+
+  /* ── MODAL ──────────────────────────────────── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 100;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  @media (min-width: 520px) { .modal-overlay { align-items: center; } }
+  .modal {
+    background: var(--white); border-radius: var(--radius) var(--radius) 0 0;
+    padding: 28px 22px 32px; width: 100%; max-width: 440px;
+    text-align: center; box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+  }
+  @media (min-width: 520px) { .modal { border-radius: var(--radius); } }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 18px; }
+  @media (min-width: 520px) { .modal-handle { display: none; } }
+  .modal h3 { font-size: 1.05rem; margin-bottom: 8px; color: var(--text-dark); }
+  .modal p  { font-size: 0.88rem; color: var(--text-mid); margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Reservas · SUM Bauness</h1>
+  <p>Reservá el salón de usos múltiples de manera simple</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="cambiarTab('reservar',this)">📅 Reservar</button>
+  <button class="tab" onclick="cambiarTab('ver',this)">📆 Ver reservas</button>
+  <button class="tab" onclick="cambiarTab('cancelar',this)">❌ Mis reservas</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 1 · RESERVAR
+══════════════════════════════════════════ -->
+<div id="tab-reservar" class="tab-content active">
+
+  <div class="card">
+    <div class="card-title">Tus datos</div>
+    <div class="field">
+      <label for="nombre">Nombre completo *</label>
+      <input type="text" id="nombre" placeholder="Ej: María García"/>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label for="depto">Departamento *</label>
+        <input type="text" id="depto" placeholder="Ej: 4B"/>
+      </div>
+      <div class="field">
+        <label for="telefono">Teléfono (opcional)</label>
+        <input type="tel" id="telefono" placeholder="11 2345-6789"/>
+      </div>
+    </div>
+    <div class="field">
+      <label for="email">Email *</label>
+      <input type="email" id="email" placeholder="tu@email.com"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Fecha y turno</div>
+
+    <div class="field">
+      <label>Fecha *</label>
+      <div class="fecha-row">
+        <input type="number" id="fecha-dia"  placeholder="Día"  min="1" max="31"  oninput="actualizarFechaISO()"/>
+        <input type="number" id="fecha-mes"  placeholder="Mes"  min="1" max="12"  oninput="actualizarFechaISO()"/>
+        <input type="number" id="fecha-anio" placeholder="Año"  min="2024" max="2030" oninput="actualizarFechaISO()"/>
+      </div>
+      <div class="alert alert-error" id="fecha-error" style="margin-top:6px;display:none;">Fecha inválida.</div>
+    </div>
+
+    <div class="field">
+      <label>Turno *</label>
+      <div class="turnos-row">
+        <button class="turno-btn" id="btn-manana" onclick="seleccionarTurno('Mañana')">
+          <div class="turno-icon">🌅</div>
+          <div class="turno-label" id="label-manana">Mañana</div>
+          <div class="turno-sub"  id="sub-manana">Disponible</div>
+        </button>
+        <button class="turno-btn" id="btn-noche" onclick="seleccionarTurno('Noche')">
+          <div class="turno-icon">🌙</div>
+          <div class="turno-label" id="label-noche">Noche</div>
+          <div class="turno-sub"  id="sub-noche">Disponible</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert" id="alerta-reservar"></div>
+  <button class="btn btn-green" id="btn-reservar" onclick="confirmarReserva()">✓ Confirmar reserva</button>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB 2 · VER RESERVAS — CALENDARIO
+══════════════════════════════════════════ -->
+<div id="tab-ver" class="tab-content">
+
+  <div class="card">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="cambiarMes(-1)">‹</button>
+      <span class="cal-month-label" id="cal-label"></span>
+      <button class="cal-nav-btn" onclick="cambiarMes(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid">
+      <div class="loading" style="grid-column:1/-1"><span class="spinner"></span>Cargando...</div>
+    </div>
+  </div>
+
+  <div id="cal-detalle-wrap"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     TAB 3 · MIS RESERVAS / CANCELAR
+══════════════════════════════════════════ -->
+<div id="tab-cancelar" class="tab-content">
+
+  <div class="card">
+    <div class="card-title">Buscá tus reservas</div>
+    <p style="font-size:.82rem;color:var(--text-mid);margin-bottom:14px;">
+      Ingresá el email con el que hiciste la reserva para verla y, si querés, cancelarla.
+    </p>
+    <div class="search-row">
+      <div class="field">
+        <label for="email-cancelar">Tu email</label>
+        <input type="email" id="email-cancelar" placeholder="tu@email.com"/>
+      </div>
+      <button class="btn btn-green" onclick="buscarMisReservas()" style="width:auto;padding:10px 18px;">Buscar</button>
+    </div>
+  </div>
+
+  <div class="alert" id="alerta-cancelar"></div>
+  <div id="mis-reservas"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL CONFIRMAR CANCELACIÓN
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:2rem;margin-bottom:10px;">🗑️</div>
+    <h3>Cancelar reserva</h3>
+    <p id="modal-texto"></p>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="cerrarModal()">No, volver</button>
+      <button class="btn btn-red" id="btn-confirmar-eliminar" onclick="eliminarConfirmado()">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIGURACIÓN — reemplazá con tu URL de Apps Script
+// ══════════════════════════════════════════════
+var SCRIPT_URL = "<?= SCRIPT_URL ?>";
+
+// ══════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════
+var reservasCache    = [];
+var fechaISO         = "";
+var turnoSeleccionado = "";
+var calAnio, calMes;
+var calDetalleVisible = null;
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function normalizarFecha(val) {
+  if (!val) return "";
+  var s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    return dt.getFullYear() + "-" +
+           String(dt.getMonth()+1).padStart(2,"0") + "-" +
+           String(dt.getDate()).padStart(2,"0");
+  }
+  return s;
+}
+
+function fechaLegible(s) {
+  if (!s) return "";
+  var p = normalizarFecha(s).split("-");
+  if (p.length === 3) return p[2]+"/"+p[1]+"/"+p[0];
+  return s;
+}
+
+function mostrarAlerta(id, msg, tipo) {
+  tipo = tipo || "error";
+  var el = document.getElementById(id);
+  el.textContent = (tipo==="error" ? "⚠️ " : "✓ ") + msg;
+  el.className = "alert show alert-" + tipo;
+  if (tipo === "success") setTimeout(function(){ el.className = "alert"; }, 5000);
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function cambiarTab(id, btn) {
+  document.querySelectorAll(".tab-content").forEach(function(t){ t.classList.remove("active"); });
+  document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
+  document.getElementById("tab-"+id).classList.add("active");
+  btn.classList.add("active");
+  if (id === "ver") cargarReservasYCalendario();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ══════════════════════════════════════════════
+//  FECHA
+// ══════════════════════════════════════════════
+function actualizarFechaISO() {
+  var d = (document.getElementById("fecha-dia").value || "").padStart(2,"0");
+  var m = (document.getElementById("fecha-mes").value || "").padStart(2,"0");
+  var a = document.getElementById("fecha-anio").value || "";
+  var errEl = document.getElementById("fecha-error");
+  turnoSeleccionado = "";
+  resetTurnos();
+
+  if (!d || !m || !a || a.length < 4) {
+    fechaISO = ""; errEl.style.display = "none"; return;
+  }
+  var candidate = a+"-"+m+"-"+d;
+  var dt = new Date(candidate+"T12:00:00");
+  if (isNaN(dt) || dt.getMonth()+1 !== parseInt(m) || dt.getDate() !== parseInt(d)) {
+    fechaISO = ""; errEl.style.display = "block"; return;
+  }
+  errEl.style.display = "none";
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  if (dt < hoy) {
+    fechaISO = "";
+    mostrarAlerta("alerta-reservar","No podés reservar en una fecha pasada.");
+    return;
+  }
+  fechaISO = candidate;
+  cargarYMostrarTurnos();
+}
+
+// ══════════════════════════════════════════════
+//  TURNOS
+// ══════════════════════════════════════════════
+function resetTurnos() {
+  var btnM = document.getElementById("btn-manana");
+  var btnN = document.getElementById("btn-noche");
+  btnM.classList.remove("ocupado","selected");
+  btnN.classList.remove("ocupado","selected");
+  document.getElementById("label-manana").textContent = "Mañana";
+  document.getElementById("label-noche").textContent  = "Noche";
+  document.getElementById("sub-manana").textContent   = "Disponible";
+  document.getElementById("sub-noche").textContent    = "Disponible";
+}
+
+function cargarYMostrarTurnos() {
+  if (!fechaISO) return;
+  fetch(SCRIPT_URL + "?action=listar")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok) {
+        reservasCache = data.reservas.map(function(r){
+          return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+        });
+      }
+      actualizarTurnos();
+    })
+    .catch(function(){ actualizarTurnos(); });
+}
+
+function actualizarTurnos() {
+  resetTurnos();
+  if (!fechaISO) return;
+
+  var ocupados = reservasCache
+    .filter(function(r){ return r.fecha === fechaISO; })
+    .map(function(r){ return r.turno; });
+
+  if (ocupados.indexOf("Mañana") >= 0) {
+    var btnM = document.getElementById("btn-manana");
+    btnM.classList.add("ocupado");
+    document.getElementById("label-manana").textContent = "No disponible";
+    document.getElementById("sub-manana").textContent   = "";
+  }
+  if (ocupados.indexOf("Noche") >= 0) {
+    var btnN = document.getElementById("btn-noche");
+    btnN.classList.add("ocupado");
+    document.getElementById("label-noche").textContent = "No disponible";
+    document.getElementById("sub-noche").textContent   = "";
+  }
+}
+
+function seleccionarTurno(turno) {
+  var id  = turno === "Mañana" ? "btn-manana" : "btn-noche";
+  var btn = document.getElementById(id);
+  if (btn.classList.contains("ocupado")) return;
+  document.querySelectorAll(".turno-btn").forEach(function(b){ b.classList.remove("selected"); });
+  btn.classList.add("selected");
+  turnoSeleccionado = turno;
+}
+
+// ══════════════════════════════════════════════
+//  CONFIRMAR RESERVA
+// ══════════════════════════════════════════════
+function confirmarReserva() {
+  var nombre = document.getElementById("nombre").value.trim();
+  var depto  = document.getElementById("depto").value.trim();
+  var email  = document.getElementById("email").value.trim();
+  var tel    = document.getElementById("telefono").value.trim();
+
+  if (!nombre) return mostrarAlerta("alerta-reservar","Ingresá tu nombre completo.");
+  if (!depto)  return mostrarAlerta("alerta-reservar","Ingresá el número de departamento.");
+  if (!email || email.indexOf("@") < 0) return mostrarAlerta("alerta-reservar","Ingresá un email válido.");
+  if (!fechaISO) return mostrarAlerta("alerta-reservar","Ingresá una fecha válida.");
+  if (!turnoSeleccionado) return mostrarAlerta("alerta-reservar","Seleccioná un turno.");
+
+  var btn = document.getElementById("btn-reservar");
+  btn.disabled = true; btn.textContent = "Guardando...";
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({ action:"crear", nombre:nombre, depto:depto,
+                           fecha:fechaISO, turno:turnoSeleccionado,
+                           telefono:tel, email:email })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data.ok) {
+      mostrarAlerta("alerta-reservar","¡Reserva confirmada! Turno "+turnoSeleccionado+" el "+fechaLegible(fechaISO),"success");
+      limpiarFormulario();
+    } else {
+      mostrarAlerta("alerta-reservar", data.error || "No se pudo guardar.");
+    }
+  })
+  .catch(function(){ mostrarAlerta("alerta-reservar","Error de conexión."); })
+  .finally(function(){ btn.disabled = false; btn.textContent = "✓ Confirmar reserva"; });
+}
+
+function limpiarFormulario() {
+  ["nombre","depto","email","telefono"].forEach(function(id){ document.getElementById(id).value = ""; });
+  document.getElementById("fecha-dia").value  = "";
+  document.getElementById("fecha-mes").value  = "";
+  document.getElementById("fecha-anio").value = new Date().getFullYear();
+  fechaISO = ""; turnoSeleccionado = "";
+  resetTurnos();
+}
+
+// ══════════════════════════════════════════════
+//  CALENDARIO MENSUAL
+// ══════════════════════════════════════════════
+function cargarReservasYCalendario() {
+  var grid = document.getElementById("cal-grid");
+  grid.innerHTML = '<div class="loading" style="grid-column:1/-1"><span class="spinner"></span>Cargando...</div>';
+
+  fetch(SCRIPT_URL + "?action=listar")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok) {
+        reservasCache = data.reservas.map(function(r){
+          return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+        });
+      }
+      renderCalendario();
+    })
+    .catch(function(){ renderCalendario(); });
+}
+
+function cambiarMes(delta) {
+  calMes += delta;
+  if (calMes < 0)  { calMes = 11; calAnio--; }
+  if (calMes > 11) { calMes = 0;  calAnio++; }
+  calDetalleVisible = null;
+  document.getElementById("cal-detalle-wrap").innerHTML = "";
+  renderCalendario();
+}
+
+function renderCalendario() {
+  var meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+               "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  var diasSem = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+
+  document.getElementById("cal-label").textContent = meses[calMes] + " " + calAnio;
+
+  var hoy = new Date();
+  var hoyStr = hoy.getFullYear()+"-"+String(hoy.getMonth()+1).padStart(2,"0")+"-"+String(hoy.getDate()).padStart(2,"0");
+
+  var porFecha = {};
+  reservasCache.forEach(function(r){
+    if (!porFecha[r.fecha]) porFecha[r.fecha] = [];
+    porFecha[r.fecha].push(r);
+  });
+
+  var primerDia  = new Date(calAnio, calMes, 1).getDay();
+  var diasEnMes  = new Date(calAnio, calMes+1, 0).getDate();
+
+  var html = diasSem.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join("");
+  for (var i = 0; i < primerDia; i++) html += '<div class="cal-day empty"></div>';
+
+  for (var d = 1; d <= diasEnMes; d++) {
+    var fechaStr = calAnio+"-"+String(calMes+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    var resArr   = porFecha[fechaStr] || [];
+    var hasRes   = resArr.length > 0;
+    var isHoy    = fechaStr === hoyStr;
+    var cls      = "cal-day" + (hasRes ? " has-reservas" : "") + (isHoy ? " today" : "");
+    var onclick  = hasRes ? 'onclick="mostrarDetalleCalendario(\''+fechaStr+'\')"' : "";
+
+    var dots = "";
+    if (hasRes) {
+      var n = Math.min(resArr.length, 3);
+      for (var j = 0; j < n; j++) dots += '<div class="cal-dot"></div>';
+      dots = '<div class="cal-dots">'+dots+'</div>';
+      if (resArr.length > 3) dots += '<div class="cal-count">+'+resArr.length+'</div>';
+    }
+    html += '<div class="'+cls+'" '+onclick+'><div class="cal-day-num">'+d+'</div>'+dots+'</div>';
+  }
+
+  document.getElementById("cal-grid").innerHTML = html;
+  if (calDetalleVisible) mostrarDetalleCalendario(calDetalleVisible, true);
+}
+
+function mostrarDetalleCalendario(fechaStr, noScroll) {
+  calDetalleVisible = fechaStr;
+  var reservasDelDia = reservasCache.filter(function(r){ return r.fecha === fechaStr; });
+  reservasDelDia.sort(function(a,b){ return a.turno.localeCompare(b.turno); });
+
+  var diasNombre = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  var dt     = new Date(fechaStr+"T12:00:00");
+  var titulo = diasNombre[dt.getDay()] + " " + fechaLegible(fechaStr);
+
+  var items = reservasDelDia.map(function(r){
+    var icon = r.turno === "Mañana" ? "🌅" : "🌙";
+    var bc   = r.turno === "Mañana" ? "badge-manana" : "badge-noche";
+    return '<div class="reserva-item">'+
+      '<div class="reserva-info">'+
+        '<div class="reserva-depto">Depto '+r.depto+'</div>'+
+        '<div class="reserva-nombre">'+r.nombre+'</div>'+
+      '</div>'+
+      '<span class="reserva-badge '+bc+'">'+icon+' '+r.turno+'</span>'+
+    '</div>';
+  }).join("");
+
+  var html =
+    '<div class="cal-detalle">'+
+      '<div class="cal-detalle-header">'+
+        '<span>📅 '+titulo+'</span>'+
+        '<button class="cal-detalle-close" onclick="cerrarDetalleCalendario()">✕</button>'+
+      '</div>'+
+      '<div class="cal-detalle-body">'+
+        (items || '<div class="empty-state" style="padding:20px 0"><div class="icon">✅</div><p>Sin reservas este día.</p></div>')+
+      '</div>'+
+    '</div>';
+
+  document.getElementById("cal-detalle-wrap").innerHTML = html;
+  if (!noScroll) document.getElementById("cal-detalle-wrap").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function cerrarDetalleCalendario() {
+  calDetalleVisible = null;
+  document.getElementById("cal-detalle-wrap").innerHTML = "";
+}
+
+// ══════════════════════════════════════════════
+//  MIS RESERVAS / CANCELAR
+// ══════════════════════════════════════════════
+function buscarMisReservas() {
+  var emailBuscar = document.getElementById("email-cancelar").value.trim().toLowerCase();
+  if (!emailBuscar || emailBuscar.indexOf("@") < 0) {
+    mostrarAlerta("alerta-cancelar","Ingresá un email válido.");
+    return;
+  }
+  var cont = document.getElementById("mis-reservas");
+  cont.innerHTML = '<div class="loading"><span class="spinner"></span>Buscando...</div>';
+
+  fetch(SCRIPT_URL + "?action=listar")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok) {
+        reservasCache = data.reservas.map(function(r){
+          return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+        });
+      }
+    })
+    .catch(function(){})
+    .finally(function(){
+      var dias   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+      var misRes = reservasCache.filter(function(r){
+        return String(r.email).toLowerCase().trim() === emailBuscar;
+      });
+      misRes.sort(function(a,b){ return a.fecha.localeCompare(b.fecha) || a.turno.localeCompare(b.turno); });
+
+      if (!misRes.length) {
+        cont.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="icon">🔍</div><p>No encontramos reservas para ese email.</p></div>';
+        return;
+      }
+
+      cont.innerHTML =
+        '<p style="font-size:.82rem;color:var(--text-mid);margin-bottom:14px;">Encontramos '+misRes.length+' reserva(s) tuya(s):</p>' +
+        misRes.map(function(r){
+          var ds      = dias[new Date(r.fecha+"T12:00:00").getDay()];
+          var icon    = r.turno === "Mañana" ? "🌅" : "🌙";
+          var bc      = r.turno === "Mañana" ? "badge-manana" : "badge-noche";
+          var emailE  = emailBuscar.replace(/'/g,"\\'");
+          var nombreE = r.nombre.replace(/'/g,"\\'");
+          return '<div class="reserva-item">'+
+            '<div class="reserva-info">'+
+              '<div class="reserva-depto">Depto '+r.depto+'</div>'+
+              '<div class="reserva-nombre">'+r.nombre+'</div>'+
+              '<div class="reserva-meta">📅 '+ds+' '+fechaLegible(r.fecha)+'</div>'+
+            '</div>'+
+            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">'+
+              '<span class="reserva-badge '+bc+'">'+icon+' '+r.turno+'</span>'+
+              '<button class="btn-danger" onclick="pedirEliminar(\''+r.id+'\',\''+nombreE+'\',\''+fechaLegible(r.fecha)+'\',\''+r.turno+'\',\''+emailE+'\')">Cancelar</button>'+
+            '</div>'+
+          '</div>';
+        }).join("");
+    });
+}
+
+// ══════════════════════════════════════════════
+//  MODAL CANCELAR
+// ══════════════════════════════════════════════
+var idParaEliminar = null, emailParaEliminar = null;
+
+function pedirEliminar(id, nombre, fecha, turno, email) {
+  idParaEliminar = id; emailParaEliminar = email;
+  document.getElementById("modal-texto").textContent =
+    "¿Cancelar el turno "+turno+" de "+nombre+" del "+fecha+"?";
+  document.getElementById("modal").classList.add("show");
+}
+function cerrarModal() {
+  idParaEliminar = null; emailParaEliminar = null;
+  document.getElementById("modal").classList.remove("show");
+}
+function eliminarConfirmado() {
+  var btn = document.getElementById("btn-confirmar-eliminar");
+  btn.disabled = true; btn.textContent = "Cancelando...";
+  var idEnviar = idParaEliminar, emailEnviar = emailParaEliminar;
+  cerrarModal();
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({ action:"eliminar", id:idEnviar, email:emailEnviar })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data.ok) {
+      mostrarAlerta("alerta-cancelar","✅ ¡Reserva cancelada correctamente!","success");
+      document.getElementById("mis-reservas").innerHTML = "";
+      buscarMisReservas();
+    } else {
+      mostrarAlerta("alerta-cancelar", data.error || "No se pudo cancelar.");
+    }
+  })
+  .catch(function(){ mostrarAlerta("alerta-cancelar","Error de conexión."); })
+  .finally(function(){ btn.disabled = false; btn.textContent = "Sí, cancelar"; });
+}
+
+document.getElementById("modal").addEventListener("click", function(e){
+  if (e.target === e.currentTarget) cerrarModal();
+});
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.addEventListener("DOMContentLoaded", function(){
+  var hoy = new Date();
+  calAnio = hoy.getFullYear();
+  calMes  = hoy.getMonth();
+  document.getElementById("fecha-anio").value = hoy.getFullYear();
+
+  fetch(SCRIPT_URL + "?action=listar")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok) {
+        reservasCache = data.reservas.map(function(r){
+          return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+        });
+      }
+    })
+    .catch(function(){});
+});
+</script>
+</body>
+</html>
